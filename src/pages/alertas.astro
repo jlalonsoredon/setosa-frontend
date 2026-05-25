@@ -1,0 +1,30 @@
+---
+import ScifiLayout from "../layouts/ScifiLayout.astro";
+import AppShell from "../components/shell/AppShell.astro";
+import AppNav from "../components/shell/AppNav.astro";
+import Text from "../components/core/Text.astro";
+import AlertCenter from "../components/alertas/AlertCenter.tsx";
+---
+
+<ScifiLayout title="Centro de Alertas — Sci-Fi UI">
+  <AppShell>
+    <AppNav />
+    <header class="space-y-2">
+      <Text variant="label" class="text-sf-primary">Operaciones · Tráfico</Text>
+      <Text variant="heading" glow class="text-xl sm:text-2xl">
+        Centro de recepción de alertas
+      </Text>
+      <p class="max-w-3xl text-sm text-sf-muted">
+        Recepción y evaluación de incidentes viales en tiempo real. Pulse
+        <strong class="text-sf-text">Recibir nueva alerta</strong> para obtener el
+        último incidente registrado, revise y complete los datos en el formulario, y
+        evalúe la gravedad con el modelo de predicción.
+      </p>
+    </header>
+
+    <AlertCenter
+      client:load
+      apiBase={import.meta.env.PUBLIC_ALERT_API_URL ?? ""}
+    />
+  </AppShell>
+</ScifiLayout>
