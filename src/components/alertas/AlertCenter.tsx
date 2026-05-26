@@ -197,6 +197,23 @@ function AlertMapView({ lat, lng }: { lat: number; lng: number }) {
   );
 }
 
+// ── Traffic images ─────────────────────────────────────────────────────────
+
+const TRAFIC_IMAGES = [
+  "/trafic/image.png",
+  "/trafic/image-1.png",
+  "/trafic/image-2.png",
+  "/trafic/image-3.png",
+  "/trafic/image-4.png",
+  "/trafic/image-5.png",
+  "/trafic/image-6.png",
+  "/trafic/image-7.png",
+];
+
+function randomTraficImage() {
+  return TRAFIC_IMAGES[Math.floor(Math.random() * TRAFIC_IMAGES.length)]!;
+}
+
 // ── Form helpers ───────────────────────────────────────────────────────────
 
 const inputClass = "w-full rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_90%,transparent)] px-3 py-2 font-sf-mono text-sm text-sf-text focus:border-[var(--sf-border-strong)] focus:outline-none focus:shadow-[0_0_14px_var(--sf-glow-primary)] transition";
@@ -221,6 +238,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
   const [loadingPred, setLoadingPred] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contactedSet, setContactedSet] = useState<Set<string>>(new Set());
+  const [traficImage, setTraficImage] = useState<string | null>(null);
 
   const fetchAlert = useCallback(async () => {
     setLoadingAlert(true); setError(null); setPrediction(null);
@@ -242,6 +260,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
       };
       setAlertHistory((prev) => [data, ...prev].slice(0, 20));
       setFormData(data);
+      setTraficImage(randomTraficImage());
     } catch (e) { setError(String(e)); }
     finally { setLoadingAlert(false); }
   }, [apiBase]);
@@ -341,7 +360,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
       <div className="grid gap-6 lg:grid-cols-2">
 
         {/* Form */}
-        <div className="rounded-sm border border-[var(--sf-border-strong)] bg-[color-mix(in_oklab,var(--sf-color-primary)_6%,var(--sf-bg-elevated))] p-5 shadow-[0_0_0_1px_color-mix(in_oklab,var(--sf-color-primary)_12%,transparent),0_0_24px_var(--sf-glow-primary)] overflow-y-auto max-h-[640px]">
+        <div className="rounded-sm border border-[var(--sf-border-strong)] bg-[color-mix(in_oklab,var(--sf-color-primary)_6%,var(--sf-bg-elevated))] p-5 shadow-[0_0_0_1px_color-mix(in_oklab,var(--sf-color-primary)_12%,transparent),0_0_24px_var(--sf-glow-primary)]">
           <p className="mb-2 font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">
             Datos del incidente{formData && <span className="ml-2 text-[var(--sf-color-primary)]">· {formData.id}</span>}
           </p>
@@ -414,67 +433,87 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
         </div>
       </div>
 
-      {/* ── Severity section ─────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start gap-6">
-        <button type="button" onClick={fetchPrediction} disabled={!formData || loadingPred} data-sf-sound-hover data-sf-sound-click className={btnSecondary}>
-          <span className="text-[var(--sf-color-secondary)]">◈</span>
-          {loadingPred ? "Evaluando…" : "Evaluar gravedad"}
-        </button>
+      {/* ── Bottom: prediction + photo ──────────────────────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-2">
 
-        {prediction && severityCfg && (
-          <div className={`flex-1 min-w-[300px] rounded-sm border p-5 transition ${severityCfg.classes}`}>
-
-            {/* Header */}
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <span className={`rounded-sm px-2.5 py-1 font-sf-mono text-xs uppercase tracking-[0.2em] ${severityCfg.badge}`}>
-                {severityCfg.label}
-              </span>
-              <span className={`font-sf-display text-2xl font-semibold tracking-wide ${severityCfg.text}`}>
-                Grado {prediction.prediction}
-              </span>
-              <span className="ml-auto font-sf-mono text-sm text-sf-muted">
-                Probabilidad: <span className={severityCfg.text}>{(prediction.severity_probability * 100).toFixed(1)}%</span>
-              </span>
-            </div>
-
-            {/* Recommendations */}
-            <p className="mb-2 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Recomendaciones</p>
-            <ul className="mb-5 space-y-1.5">
-              {severityCfg.recommendations.map((r, i) => (
-                <li key={i} className="flex items-start gap-2 font-sf-mono text-sm text-sf-muted">
-                  <span className={`mt-0.5 shrink-0 ${severityCfg.text}`}>›</span>{r}
-                </li>
-              ))}
-            </ul>
-
-            {/* Contact buttons */}
-            <p className="mb-3 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Contactar asistencias</p>
-            <div className="flex flex-wrap gap-3">
-              {severityCfg.contacts.map((key) => {
-                const cfg = CONTACT_CONFIG[key]!;
-                const contacted = contactedSet.has(key);
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setContactedSet((prev) => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; })}
-                    data-sf-sound-click
-                    className={`inline-flex items-center gap-2 rounded-sm border px-4 py-2 font-sf-mono text-xs uppercase tracking-[0.18em] transition duration-200 active:scale-[0.97] ${
-                      contacted
-                        ? `${cfg.color} opacity-60 cursor-default`
-                        : `${cfg.color} hover:brightness-125`
-                    }`}
-                  >
-                    <span>{cfg.symbol}</span>
-                    {cfg.label}
-                    {contacted && <span className="ml-1 text-[0.6rem] opacity-80">· Contactado</span>}
-                  </button>
-                );
-              })}
-            </div>
-
+        {/* Left: evaluar gravedad + banner */}
+        <div className="flex flex-col gap-4">
+          <div>
+            <button type="button" onClick={fetchPrediction} disabled={!formData || loadingPred} data-sf-sound-hover data-sf-sound-click className={btnSecondary}>
+              <span className="text-[var(--sf-color-secondary)]">◈</span>
+              {loadingPred ? "Evaluando…" : "Evaluar gravedad"}
+            </button>
           </div>
-        )}
+
+          {prediction && severityCfg && (
+            <div className={`rounded-sm border p-5 transition ${severityCfg.classes}`}>
+
+              {/* Header */}
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <span className={`rounded-sm px-2.5 py-1 font-sf-mono text-xs uppercase tracking-[0.2em] ${severityCfg.badge}`}>
+                  {severityCfg.label}
+                </span>
+                <span className={`font-sf-display text-2xl font-semibold tracking-wide ${severityCfg.text}`}>
+                  Grado {prediction.prediction}
+                </span>
+                <span className="ml-auto font-sf-mono text-sm text-sf-muted">
+                  Probabilidad: <span className={severityCfg.text}>{(prediction.severity_probability * 100).toFixed(1)}%</span>
+                </span>
+              </div>
+
+              {/* Recommendations */}
+              <p className="mb-2 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Recomendaciones</p>
+              <ul className="mb-5 space-y-1.5">
+                {severityCfg.recommendations.map((r, i) => (
+                  <li key={i} className="flex items-start gap-2 font-sf-mono text-sm text-sf-muted">
+                    <span className={`mt-0.5 shrink-0 ${severityCfg.text}`}>›</span>{r}
+                  </li>
+                ))}
+              </ul>
+
+              {/* Contact buttons */}
+              <p className="mb-3 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Contactar asistencias</p>
+              <div className="flex flex-wrap gap-3">
+                {severityCfg.contacts.map((key) => {
+                  const cfg = CONTACT_CONFIG[key]!;
+                  const contacted = contactedSet.has(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setContactedSet((prev) => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; })}
+                      data-sf-sound-click
+                      className={`inline-flex items-center gap-2 rounded-sm border px-4 py-2 font-sf-mono text-xs uppercase tracking-[0.18em] transition duration-200 active:scale-[0.97] ${contacted ? `${cfg.color} opacity-60` : `${cfg.color} hover:brightness-125`}`}
+                    >
+                      <span>{cfg.symbol}</span>
+                      {cfg.label}
+                      {contacted && <span className="ml-1 text-[0.6rem] opacity-80">· Contactado</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+            </div>
+          )}
+        </div>
+
+        {/* Right: traffic photo below the map */}
+        <div className="rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_85%,transparent)] p-3 flex flex-col gap-2">
+          <p className="font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">Imagen del incidente</p>
+          <div className="flex flex-1 items-center justify-center overflow-hidden rounded-sm border border-[var(--sf-border-subtle)] min-h-[200px]">
+            {traficImage ? (
+              <img
+                key={traficImage}
+                src={traficImage}
+                alt="Imagen de tráfico"
+                className="max-h-[420px] w-auto max-w-full object-contain"
+              />
+            ) : (
+              <p className="font-sf-mono text-sm text-sf-dim">Sin imagen — reciba una alerta</p>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
