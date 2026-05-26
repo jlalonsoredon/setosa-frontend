@@ -20,9 +20,9 @@ const STORAGE_KEY = "sf:settings";
 const LEGACY_THEME_KEY = "sf-theme";
 
 export const defaultSettings: SfSettings = {
-  theme: "default",
-  appearance: "default",
-  soundEnabled: false,
+  theme: "ember",
+  appearance: "high-contrast",
+  soundEnabled: true,
   soundVolume: 0.25,
   scanlines: true,
   grain: true,

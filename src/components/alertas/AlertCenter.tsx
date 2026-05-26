@@ -103,16 +103,18 @@ function AlertMapView({ lat, lng }: { lat: number; lng: number }) {
         sources: {
           basemap: {
             type: "raster",
-            tiles: ["https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"],
+            tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
             tileSize: 256,
+            maxzoom: 17,
             attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+              'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
           },
         },
-        layers: [{ id: "basemap", type: "raster", source: "basemap" }],
+        layers: [{ id: "basemap", type: "raster", source: "basemap", maxzoom: 17 }],
       },
       center: [lng, lat],
       zoom: 13,
+      maxZoom: 17,
       attributionControl: true,
     });
 
