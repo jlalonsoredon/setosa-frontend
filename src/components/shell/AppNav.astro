@@ -2,14 +2,7 @@
 const path = Astro.url.pathname;
 
 const links = [
-  { href: "/", label: "Home" },
-  { href: "/components", label: "Components" },
-  { href: "/kit", label: "Kit" },
-  { href: "/settings", label: "Settings" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/map", label: "Map" },
-  { href: "/intel", label: "Intel" },
-  { href: "/alertas", label: "Alertas" },
+  { href: "/", label: "Alertas" },
 ] as const;
 
 function isActive(href: string): boolean {
@@ -23,7 +16,7 @@ function isActive(href: string): boolean {
   aria-label="Primary"
 >
   <div class="flex flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-    <span class="mr-2 font-sf-display text-[0.65rem] uppercase tracking-[0.22em] text-sf-muted">Sci‑Fi UI</span>
+    <span class="mr-2 font-sf-display text-[0.65rem] uppercase tracking-[0.22em] text-sf-muted">Setosa Alertas</span>
     {
       links.map((l) => (
         <a
