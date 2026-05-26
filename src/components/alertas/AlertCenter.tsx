@@ -35,10 +35,9 @@ type AlertData = {
 };
 
 type PredictionResult = {
-  severity: "low" | "medium" | "high" | "critical";
-  score: number;
-  label: string;
-  recommendations: string[];
+  prediction: number;
+  severity_probability: number;
+  threshold: number;
 };
 
 // ── Geohash decoder ────────────────────────────────────────────────────────
@@ -114,22 +113,48 @@ function buildMockAlert(): AlertData {
 }
 
 const MOCK_PREDICTION: PredictionResult = {
-  severity: "medium", score: 0.62, label: "Gravedad moderada",
-  recommendations: [
-    "Activar unidad de emergencias médicas",
-    "Señalizar desvío alternativo",
-    "Notificar a DGT para actualización del tráfico",
-  ],
+  prediction: 1,
+  severity_probability: 0.7507278678830313,
+  threshold: 0.5,
 };
 
 // ── Severity helpers ───────────────────────────────────────────────────────
 
-const SEVERITY_CONFIG = {
-  low:      { label: "BAJA",     classes: "border-[var(--sf-color-primary)] shadow-[0_0_24px_var(--sf-glow-primary)] text-[var(--sf-color-primary)]",         badge: "bg-[color-mix(in_oklab,var(--sf-color-primary)_18%,transparent)] text-[var(--sf-color-primary)]" },
-  medium:   { label: "MODERADA", classes: "border-amber-400 shadow-[0_0_24px_rgba(251,191,36,0.35)] text-amber-400",                                           badge: "bg-amber-400/15 text-amber-400" },
-  high:     { label: "ALTA",     classes: "border-orange-400 shadow-[0_0_24px_rgba(251,146,60,0.4)] text-orange-400",                                          badge: "bg-orange-400/15 text-orange-400" },
-  critical: { label: "CRÍTICA",  classes: "border-[var(--sf-color-secondary)] shadow-[0_0_32px_var(--sf-glow-secondary)] text-[var(--sf-color-secondary)]",    badge: "bg-[color-mix(in_oklab,var(--sf-color-secondary)_18%,transparent)] text-[var(--sf-color-secondary)]" },
+const SEVERITY = {
+  leve: {
+    label: "LEVE",
+    classes: "border-[var(--sf-color-primary)] shadow-[0_0_24px_var(--sf-glow-primary)]",
+    badge: "bg-[color-mix(in_oklab,var(--sf-color-primary)_18%,transparent)] text-[var(--sf-color-primary)]",
+    text: "text-[var(--sf-color-primary)]",
+    recommendations: [
+      "Señalizar la zona del incidente para evitar nuevos accidentes",
+      "Solicitar servicio de grúa para retirar el vehículo",
+      "Notificar a DGT para actualización del estado del tráfico",
+    ],
+    contacts: ["grua"] as const,
+  },
+  grave: {
+    label: "GRAVE",
+    classes: "border-[var(--sf-color-secondary)] shadow-[0_0_32px_var(--sf-glow-secondary)]",
+    badge: "bg-[color-mix(in_oklab,var(--sf-color-secondary)_18%,transparent)] text-[var(--sf-color-secondary)]",
+    text: "text-[var(--sf-color-secondary)]",
+    recommendations: [
+      "Activar unidad de emergencias médicas de inmediato",
+      "Alertar a las fuerzas de seguridad del Estado",
+      "Notificar a bomberos si existe riesgo de incendio o atrapados",
+      "Señalizar desvío alternativo y cortar el carril afectado",
+      "Solicitar servicio de grúa para despejar la calzada",
+    ],
+    contacts: ["ambulancia", "policia", "bomberos", "grua"] as const,
+  },
 } as const;
+
+const CONTACT_CONFIG: Record<string, { label: string; symbol: string; color: string }> = {
+  ambulancia: { label: "Ambulancia", symbol: "✚", color: "border-red-400 text-red-400 shadow-[0_0_14px_rgba(248,113,113,0.4)] hover:shadow-[0_0_24px_rgba(248,113,113,0.6)] bg-red-400/10" },
+  policia:    { label: "Policía",    symbol: "◆", color: "border-blue-400 text-blue-400 shadow-[0_0_14px_rgba(96,165,250,0.4)] hover:shadow-[0_0_24px_rgba(96,165,250,0.6)] bg-blue-400/10" },
+  bomberos:   { label: "Bomberos",   symbol: "▲", color: "border-orange-400 text-orange-400 shadow-[0_0_14px_rgba(251,146,60,0.4)] hover:shadow-[0_0_24px_rgba(251,146,60,0.6)] bg-orange-400/10" },
+  grua:       { label: "Grúa",       symbol: "◈", color: "border-amber-400 text-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.4)] hover:shadow-[0_0_24px_rgba(251,191,36,0.6)] bg-amber-400/10" },
+};
 
 // ── AlertMapView ───────────────────────────────────────────────────────────
 
@@ -195,6 +220,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
   const [loadingAlert, setLoadingAlert] = useState(false);
   const [loadingPred, setLoadingPred] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contactedSet, setContactedSet] = useState<Set<string>>(new Set());
 
   const fetchAlert = useCallback(async () => {
     setLoadingAlert(true); setError(null); setPrediction(null);
@@ -237,6 +263,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
         result = MOCK_PREDICTION;
       }
       setPrediction(result);
+      setContactedSet(new Set());
     } catch (e) { setError(String(e)); }
     finally { setLoadingPred(false); }
   }, [apiBase, formData]);
@@ -253,7 +280,9 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
 
   const mapCoords = formData?.geo_hash ? decodeGeohash(formData.geo_hash) : ([51.5, -0.1] as [number, number]);
 
-  const severityConfig = prediction ? SEVERITY_CONFIG[prediction.severity] : null;
+  const severityCfg = prediction
+    ? (prediction.severity_probability >= prediction.threshold ? SEVERITY.grave : SEVERITY.leve)
+    : null;
 
   const btnPrimary = "group relative isolate inline-flex min-h-10 items-center justify-center gap-2 px-5 py-2 font-sf-mono text-xs uppercase tracking-[0.2em] transition-[transform,box-shadow,color,background-color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sf-primary active:scale-[0.98] rounded-sm bg-[color-mix(in_oklab,var(--sf-color-primary)_18%,var(--sf-bg-elevated))] text-sf-text border border-[var(--sf-border-strong)] shadow-[0_0_0_1px_color-mix(in_oklab,var(--sf-color-primary)_25%,transparent),0_0_24px_var(--sf-glow-primary)] hover:shadow-[0_0_0_1px_var(--sf-color-primary),0_0_36px_var(--sf-glow-primary)] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
   const btnSecondary = "group relative isolate inline-flex min-h-10 items-center justify-center gap-2 px-5 py-2 font-sf-mono text-xs uppercase tracking-[0.2em] transition-[transform,box-shadow,color,background-color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sf-primary active:scale-[0.98] rounded-sm bg-[color-mix(in_oklab,var(--sf-color-secondary)_14%,var(--sf-bg-elevated))] text-sf-text border border-[color-mix(in_oklab,var(--sf-color-secondary)_45%,transparent)] shadow-[0_0_20px_var(--sf-glow-secondary)] hover:shadow-[0_0_32px_var(--sf-glow-secondary)] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
@@ -392,22 +421,58 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
           {loadingPred ? "Evaluando…" : "Evaluar gravedad"}
         </button>
 
-        {prediction && severityConfig && (
-          <div className={`flex-1 min-w-[280px] rounded-sm border p-5 transition ${severityConfig.classes}`}>
-            <div className="mb-3 flex items-center gap-3">
-              <span className={`rounded-sm px-2.5 py-1 font-sf-mono text-xs uppercase tracking-[0.2em] ${severityConfig.badge}`}>{severityConfig.label}</span>
-              <span className="font-sf-mono text-sm text-sf-muted">Score: {(prediction.score * 100).toFixed(0)}%</span>
+        {prediction && severityCfg && (
+          <div className={`flex-1 min-w-[300px] rounded-sm border p-5 transition ${severityCfg.classes}`}>
+
+            {/* Header */}
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <span className={`rounded-sm px-2.5 py-1 font-sf-mono text-xs uppercase tracking-[0.2em] ${severityCfg.badge}`}>
+                {severityCfg.label}
+              </span>
+              <span className={`font-sf-display text-2xl font-semibold tracking-wide ${severityCfg.text}`}>
+                Grado {prediction.prediction}
+              </span>
+              <span className="ml-auto font-sf-mono text-sm text-sf-muted">
+                Probabilidad: <span className={severityCfg.text}>{(prediction.severity_probability * 100).toFixed(1)}%</span>
+              </span>
             </div>
-            <p className="mb-3 font-sf-mono text-sm">{prediction.label}</p>
-            {prediction.recommendations.length > 0 && (
-              <ul className="space-y-1">
-                {prediction.recommendations.map((r, i) => (
-                  <li key={i} className="flex items-start gap-2 font-sf-mono text-sm text-sf-muted">
-                    <span className="mt-0.5 shrink-0 text-sf-dim">›</span>{r}
-                  </li>
-                ))}
-              </ul>
-            )}
+
+            {/* Recommendations */}
+            <p className="mb-2 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Recomendaciones</p>
+            <ul className="mb-5 space-y-1.5">
+              {severityCfg.recommendations.map((r, i) => (
+                <li key={i} className="flex items-start gap-2 font-sf-mono text-sm text-sf-muted">
+                  <span className={`mt-0.5 shrink-0 ${severityCfg.text}`}>›</span>{r}
+                </li>
+              ))}
+            </ul>
+
+            {/* Contact buttons */}
+            <p className="mb-3 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Contactar asistencias</p>
+            <div className="flex flex-wrap gap-3">
+              {severityCfg.contacts.map((key) => {
+                const cfg = CONTACT_CONFIG[key]!;
+                const contacted = contactedSet.has(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setContactedSet((prev) => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; })}
+                    data-sf-sound-click
+                    className={`inline-flex items-center gap-2 rounded-sm border px-4 py-2 font-sf-mono text-xs uppercase tracking-[0.18em] transition duration-200 active:scale-[0.97] ${
+                      contacted
+                        ? `${cfg.color} opacity-60 cursor-default`
+                        : `${cfg.color} hover:brightness-125`
+                    }`}
+                  >
+                    <span>{cfg.symbol}</span>
+                    {cfg.label}
+                    {contacted && <span className="ml-1 text-[0.6rem] opacity-80">· Contactado</span>}
+                  </button>
+                );
+              })}
+            </div>
+
           </div>
         )}
       </div>
