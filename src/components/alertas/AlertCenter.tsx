@@ -418,7 +418,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
         </div>
 
         {/* Map */}
-        <div className="flex flex-col rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_85%,transparent)] p-5">
+        <div className="flex flex-col rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_85%,transparent)] p-5 min-h-[420px]">
           <p className="mb-3 font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">
             Localización del incidente
             {formData && (
@@ -427,7 +427,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
               </span>
             )}
           </p>
-          <div className="flex-1">
+          <div className="flex-1 min-h-0">
             <AlertMapView lat={mapCoords[0]} lng={mapCoords[1]} />
           </div>
         </div>
@@ -500,7 +500,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
         {/* Right: traffic photo below the map */}
         <div className="rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_85%,transparent)] p-3 flex flex-col gap-2 overflow-hidden">
           <p className="font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">Imagen del incidente</p>
-          <div className="overflow-hidden rounded-sm border border-[var(--sf-border-subtle)] min-h-[200px] flex items-center justify-center">
+          <div className="overflow-hidden rounded-sm border border-[var(--sf-border-subtle)] min-h-[200px] max-h-[360px] flex items-center justify-center">
             {traficImage ? (
               <img
                 key={traficImage}
