@@ -4,8 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 // ── API ────────────────────────────────────────────────────────────────────
 
-const API_DATA    = "https://setosa-te3e.onrender.com/api/v1/data";
-const API_PREDICT = "https://setosa-te3e.onrender.com/api/v1/predict";
+const API_DATA    = "/api/data";
+const API_PREDICT = "/api/predict";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
