@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 
+export const prerender = false;
+
 const UPSTREAM = "https://setosa-te3e.onrender.com/api/v1/predict";
 
 export const POST: APIRoute = async ({ request }) => {
