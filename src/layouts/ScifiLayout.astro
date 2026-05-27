@@ -57,7 +57,7 @@ const ogImage = new URL("/og-image.png", Astro.url.origin);
           if (!s) {
             var leg = localStorage.getItem("sf-theme");
             if (leg && leg !== "default") d.setAttribute("data-theme", leg);
-            d.removeAttribute("data-sf-appearance");
+            d.setAttribute("data-sf-appearance", "high-contrast");
             d.setAttribute("data-sf-scanlines", "on");
             d.setAttribute("data-sf-grain", "on");
             d.setAttribute("data-sf-vignette", "on");
@@ -67,7 +67,7 @@ const ogImage = new URL("/og-image.png", Astro.url.origin);
           var th = s.theme || "default";
           if (th !== "default") d.setAttribute("data-theme", th);
           else d.removeAttribute("data-theme");
-          var ap = s.appearance || "default";
+          var ap = s.appearance || "high-contrast";
           if (ap !== "default") d.setAttribute("data-sf-appearance", ap);
           else d.removeAttribute("data-sf-appearance");
           d.setAttribute("data-sf-scanlines", s.scanlines === false ? "off" : "on");

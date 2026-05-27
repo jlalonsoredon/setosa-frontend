@@ -3,16 +3,16 @@
 :root {
   color-scheme: dark;
 
-  /* Default: synthwave / Astro hero — electric cyan + hot magenta on violet-black */
-  --sf-color-primary: #00e5ff;
-  --sf-color-secondary: #e916b8;
+  /* Default: ember — orange + rose on violet-black */
+  --sf-color-primary: #fb923c;
+  --sf-color-secondary: #f43f5e;
   --sf-bg-deep: #0c0618;
   --sf-bg-elevated: #120c22;
   --sf-bg-panel: color-mix(in oklab, var(--sf-bg-elevated) 88%, transparent);
   --sf-bg-panel-solid: #161026;
 
-  --sf-glow-primary: color-mix(in oklab, var(--sf-color-primary) 52%, transparent);
-  --sf-glow-secondary: color-mix(in oklab, var(--sf-color-secondary) 48%, transparent);
+  --sf-glow-primary: color-mix(in oklab, var(--sf-color-primary) 50%, transparent);
+  --sf-glow-secondary: color-mix(in oklab, var(--sf-color-secondary) 45%, transparent);
 
   --sf-border-subtle: color-mix(in oklab, var(--sf-color-primary) 24%, transparent);
   --sf-border-strong: color-mix(in oklab, var(--sf-color-primary) 58%, transparent);
@@ -62,11 +62,12 @@
   );
 }
 
-[data-theme="ember"] {
-  --sf-color-primary: #fb923c;
-  --sf-color-secondary: #f43f5e;
-  --sf-glow-primary: color-mix(in oklab, var(--sf-color-primary) 50%, transparent);
-  --sf-glow-secondary: color-mix(in oklab, var(--sf-color-secondary) 45%, transparent);
+/* Old default moved to named theme */
+[data-theme="synthwave"] {
+  --sf-color-primary: #00e5ff;
+  --sf-color-secondary: #e916b8;
+  --sf-glow-primary: color-mix(in oklab, var(--sf-color-primary) 52%, transparent);
+  --sf-glow-secondary: color-mix(in oklab, var(--sf-color-secondary) 48%, transparent);
 }
 
 [data-theme="matrix"] {

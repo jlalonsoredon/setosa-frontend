@@ -36,5 +36,45 @@ function isActive(href: string): boolean {
         </a>
       ))
     }
+<button
+      id="sf-appearance-toggle"
+      aria-label="Toggle light / dark appearance"
+      class="ml-auto rounded-sm border border-(--sf-border-subtle) bg-[color-mix(in_oklab,var(--sf-bg-elevated)_88%,transparent)] p-1.5 text-sf-muted transition hover:border-(--sf-border-strong) hover:text-sf-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sf-primary"
+    >
+      <!-- Sol: visible en modo oscuro/high-contrast → clic para ir a Light -->
+      <svg id="sf-icon-sun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+      </svg>
+      <!-- Luna: visible en modo Light → clic para ir a High contrast -->
+      <svg id="sf-icon-moon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>
+      </svg>
+    </button>
   </div>
 </nav>
+
+<style>
+  /* Intercambio de iconos sin flash — controlado por el atributo del <html> */
+  #sf-icon-moon { display: none; }
+  :global([data-sf-appearance="light"]) #sf-icon-moon { display: block; }
+  :global([data-sf-appearance="light"]) #sf-icon-sun  { display: none; }
+</style>
+
+<script>
+  const btn = document.getElementById("sf-appearance-toggle") as HTMLButtonElement | null;
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const d = document.documentElement;
+      const current = d.getAttribute("data-sf-appearance") ?? "high-contrast";
+      const next = current === "light" ? "high-contrast" : "light";
+      d.setAttribute("data-sf-appearance", next);
+      try {
+        const raw = localStorage.getItem("sf:settings");
+        const s: Record<string, unknown> = raw ? JSON.parse(raw) : {};
+        s.appearance = next;
+        localStorage.setItem("sf:settings", JSON.stringify(s));
+      } catch (_) { /* ignore */ }
+    });
+  }
+</script>
