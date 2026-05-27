@@ -360,7 +360,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
       <div className="grid gap-6 lg:grid-cols-2">
 
         {/* Form */}
-        <div className="rounded-sm border border-[var(--sf-border-strong)] bg-[color-mix(in_oklab,var(--sf-color-primary)_6%,var(--sf-bg-elevated))] p-5 shadow-[0_0_0_1px_color-mix(in_oklab,var(--sf-color-primary)_12%,transparent),0_0_24px_var(--sf-glow-primary)]">
+        <div className="rounded-sm border border-[var(--sf-border-strong)] bg-[color-mix(in_oklab,var(--sf-color-primary)_6%,var(--sf-bg-elevated))] p-5 shadow-[0_0_0_1px_color-mix(in_oklab,var(--sf-color-primary)_12%,transparent),0_0_24px_var(--sf-glow-primary)] overflow-y-auto max-h-[640px]">
           <p className="mb-2 font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">
             Datos del incidente{formData && <span className="ml-2 text-[var(--sf-color-primary)]">· {formData.id}</span>}
           </p>
@@ -498,15 +498,15 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
         </div>
 
         {/* Right: traffic photo below the map */}
-        <div className="rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_85%,transparent)] p-3 flex flex-col gap-2">
+        <div className="rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_85%,transparent)] p-3 flex flex-col gap-2 overflow-hidden">
           <p className="font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">Imagen del incidente</p>
-          <div className="flex flex-1 items-center justify-center overflow-hidden rounded-sm border border-[var(--sf-border-subtle)] min-h-[200px]">
+          <div className="overflow-hidden rounded-sm border border-[var(--sf-border-subtle)] min-h-[200px] flex items-center justify-center">
             {traficImage ? (
               <img
                 key={traficImage}
                 src={traficImage}
                 alt="Imagen de tráfico"
-                className="max-h-[420px] w-auto max-w-full object-contain"
+                className="w-full h-auto object-contain block"
               />
             ) : (
               <p className="font-sf-mono text-sm text-sf-dim">Sin imagen — reciba una alerta</p>
