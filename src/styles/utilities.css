@@ -198,6 +198,7 @@
   pointer-events: none;
   position: absolute;
   inset: 0;
+  overflow: hidden;
   opacity: var(--sf-scanline-opacity);
   background: repeating-linear-gradient(
     to bottom,

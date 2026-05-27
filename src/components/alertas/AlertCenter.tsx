@@ -315,8 +315,8 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
           <span className="text-[var(--sf-color-primary)]">◉</span>
           {loadingAlert ? "Recibiendo…" : "Recibir nueva alerta"}
         </button>
-        {!apiBase && <span className="font-sf-mono text-xs uppercase tracking-[0.15em] text-sf-dim">Modo demo · sin API configurada</span>}
-        {error && <span className="font-sf-mono text-xs uppercase tracking-[0.15em] text-red-400">Error: {error}</span>}
+        {/* {!apiBase && <span className="font-sf-mono text-xs uppercase tracking-[0.15em] text-sf-dim">Modo demo · sin API configurada</span>}
+        {error && <span className="font-sf-mono text-xs uppercase tracking-[0.15em] text-red-400">Error: {error}</span>} */}
       </div>
 
       {/* ── History table ────────────────────────────────────────────────── */}
