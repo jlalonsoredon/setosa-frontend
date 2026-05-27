@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
+// ── API ────────────────────────────────────────────────────────────────────
+
+const API_DATA    = "https://setosa-te3e.onrender.com/api/v1/data";
+const API_PREDICT = "https://setosa-te3e.onrender.com/api/v1/predict";
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type AlertData = {
-  // internal (not from API)
   id: string;
   timestamp: string;
-  // API fields
   age_band_of_casualty: string;
   age_band_of_driver: string;
   casualty_type: string;
@@ -58,65 +61,6 @@ function decodeGeohash(hash: string): [number, number] {
   }
   return [(latMin + latMax) / 2, (lonMin + lonMax) / 2];
 }
-
-// ── Mock data ──────────────────────────────────────────────────────────────
-
-let mockCounter = 0;
-
-const MOCK_TEMPLATES: Omit<AlertData, "id" | "timestamp">[] = [
-  {
-    age_band_of_casualty: "26 - 35", age_band_of_driver: "36 - 45",
-    casualty_type: "Car occupant", day_period: "morning",
-    first_point_of_impact: "Front", geo_hash: "gcpvh",
-    hit_object_in_carriageway: "Parked vehicle", hit_object_off_carriageway: "No hit",
-    junction_location: "Not at or within 20 metres of junction", light_conditions: "Daylight",
-    number_of_casualties: 1, number_of_vehicles: 2,
-    pedestrian_location: "Not a Pedestrian", pedestrian_movement: "Not a Pedestrian",
-    road_type: "Single carriageway", skidding_and_overturning: "No skidding",
-    special_conditions_at_site: "No", speed_limit: 30, urban_or_rural_area: "Urban",
-    vehicle_leaving_carriageway: "Did not leave carriageway", vehicle_left_hand_drive: "No",
-    vehicle_manoeuvre: "Going ahead", vehicle_type: "Car",
-  },
-  {
-    age_band_of_casualty: "66 - 75", age_band_of_driver: "66 - 75",
-    casualty_type: "Pedestrian", day_period: "evening",
-    first_point_of_impact: "Front", geo_hash: "u100",
-    hit_object_in_carriageway: "No", hit_object_off_carriageway: "No hit",
-    junction_location: "Mid Junction - on roundabout", light_conditions: "Darkness - lights lit",
-    number_of_casualties: 2, number_of_vehicles: 1,
-    pedestrian_location: "In carriageway, crossing on pedestrian crossing facility",
-    pedestrian_movement: "Crossing from driver's nearside",
-    road_type: "Dual carriageway", skidding_and_overturning: "Skidded",
-    special_conditions_at_site: "No", speed_limit: 50, urban_or_rural_area: "Urban",
-    vehicle_leaving_carriageway: "Did not leave carriageway", vehicle_left_hand_drive: "No",
-    vehicle_manoeuvre: "Slowing or stopping", vehicle_type: "Motorcycle",
-  },
-  {
-    age_band_of_casualty: "46 - 55", age_band_of_driver: "46 - 55",
-    casualty_type: "Car occupant", day_period: "afternoon",
-    first_point_of_impact: "Offside", geo_hash: "gcn",
-    hit_object_in_carriageway: "Road works", hit_object_off_carriageway: "Road sign",
-    junction_location: "Not at or within 20 metres of junction", light_conditions: "Daylight",
-    number_of_casualties: 3, number_of_vehicles: 3,
-    pedestrian_location: "Not a Pedestrian", pedestrian_movement: "Not a Pedestrian",
-    road_type: "Single carriageway", skidding_and_overturning: "No skidding",
-    special_conditions_at_site: "Road works", speed_limit: 70, urban_or_rural_area: "Rural",
-    vehicle_leaving_carriageway: "Off nearside of carriageway", vehicle_left_hand_drive: "No",
-    vehicle_manoeuvre: "Overtaking moving vehicle - offside", vehicle_type: "Goods >3.5t",
-  },
-];
-
-function buildMockAlert(): AlertData {
-  mockCounter++;
-  const t = MOCK_TEMPLATES[(mockCounter - 1) % MOCK_TEMPLATES.length]!;
-  return { id: `ALERT-DEMO-${String(mockCounter).padStart(3, "0")}`, timestamp: new Date().toISOString(), ...t };
-}
-
-const MOCK_PREDICTION: PredictionResult = {
-  prediction: 1,
-  severity_probability: 0.7507278678830313,
-  threshold: 0.5,
-};
 
 // ── Severity helpers ───────────────────────────────────────────────────────
 
@@ -200,19 +144,10 @@ function AlertMapView({ lat, lng }: { lat: number; lng: number }) {
 // ── Traffic images ─────────────────────────────────────────────────────────
 
 const TRAFIC_IMAGES = [
-  "/trafic/image.png",
-  "/trafic/image-1.png",
-  "/trafic/image-2.png",
-  "/trafic/image-3.png",
-  "/trafic/image-4.png",
-  "/trafic/image-5.png",
-  "/trafic/image-6.png",
-  "/trafic/image-7.png",
+  "/trafic/image.png", "/trafic/image-1.png", "/trafic/image-2.png",
+  "/trafic/image-3.png", "/trafic/image-4.png", "/trafic/image-5.png",
+  "/trafic/image-6.png", "/trafic/image-7.png",
 ];
-
-function randomTraficImage() {
-  return TRAFIC_IMAGES[Math.floor(Math.random() * TRAFIC_IMAGES.length)]!;
-}
 
 // ── Form helpers ───────────────────────────────────────────────────────────
 
@@ -223,14 +158,13 @@ const sectionClass = "font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-pr
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label className={labelClass}>{label}</label>{children}</div>;
 }
-
 function SectionHead({ children }: { children: React.ReactNode }) {
   return <p className={sectionClass}>{children}</p>;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export default function AlertCenter({ apiBase }: { apiBase: string }) {
+export default function AlertCenter() {
   const [alertHistory, setAlertHistory] = useState<AlertData[]>([]);
   const [formData, setFormData] = useState<AlertData | null>(null);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
@@ -243,16 +177,9 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
   const fetchAlert = useCallback(async () => {
     setLoadingAlert(true); setError(null); setPrediction(null);
     try {
-      let raw: Omit<AlertData, "id" | "timestamp">;
-      if (apiBase) {
-        const r = await fetch(`${apiBase}/get_data`);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        raw = await r.json();
-      } else {
-        await new Promise((res) => setTimeout(res, 600));
-        const { id: _i, timestamp: _t, ...rest } = buildMockAlert();
-        raw = rest;
-      }
+      const r = await fetch(API_DATA);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const raw = await r.json() as Omit<AlertData, "id" | "timestamp">;
       const data: AlertData = {
         id: `ALERT-${Date.now().toString(36).toUpperCase()}`,
         timestamp: new Date().toISOString(),
@@ -260,32 +187,27 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
       };
       setAlertHistory((prev) => [data, ...prev].slice(0, 20));
       setFormData(data);
-      setTraficImage(randomTraficImage());
+      setTraficImage(TRAFIC_IMAGES[Math.floor(Math.random() * TRAFIC_IMAGES.length)]!);
     } catch (e) { setError(String(e)); }
     finally { setLoadingAlert(false); }
-  }, [apiBase]);
+  }, []);
 
   const fetchPrediction = useCallback(async () => {
     if (!formData) return;
     setLoadingPred(true); setError(null);
     try {
-      let result: PredictionResult;
-      if (apiBase) {
-        const r = await fetch(`${apiBase}/get_prediction`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        result = await r.json();
-      } else {
-        await new Promise((res) => setTimeout(res, 800));
-        result = MOCK_PREDICTION;
-      }
+      const r = await fetch(API_PREDICT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const result = await r.json() as PredictionResult;
       setPrediction(result);
       setContactedSet(new Set());
     } catch (e) { setError(String(e)); }
     finally { setLoadingPred(false); }
-  }, [apiBase, formData]);
+  }, [formData]);
 
   const set = <K extends keyof AlertData>(key: K, value: AlertData[K]) =>
     setFormData((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -298,7 +220,6 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
   );
 
   const mapCoords = formData?.geo_hash ? decodeGeohash(formData.geo_hash) : ([51.5, -0.1] as [number, number]);
-
   const severityCfg = prediction
     ? (prediction.severity_probability >= prediction.threshold ? SEVERITY.grave : SEVERITY.leve)
     : null;
@@ -315,8 +236,7 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
           <span className="text-[var(--sf-color-primary)]">◉</span>
           {loadingAlert ? "Recibiendo…" : "Recibir nueva alerta"}
         </button>
-        {/* {!apiBase && <span className="font-sf-mono text-xs uppercase tracking-[0.15em] text-sf-dim">Modo demo · sin API configurada</span>}
-        {error && <span className="font-sf-mono text-xs uppercase tracking-[0.15em] text-red-400">Error: {error}</span>} */}
+        {error && <span className="font-sf-mono text-xs uppercase tracking-[0.15em] text-red-400">Error: {error}</span>}
       </div>
 
       {/* ── History table ────────────────────────────────────────────────── */}
@@ -358,16 +278,13 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
 
       {/* ── Form + Map ───────────────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-2">
-
         {/* Form */}
         <div className="rounded-sm border border-[var(--sf-border-strong)] bg-[color-mix(in_oklab,var(--sf-color-primary)_6%,var(--sf-bg-elevated))] p-5 shadow-[0_0_0_1px_color-mix(in_oklab,var(--sf-color-primary)_12%,transparent),0_0_24px_var(--sf-glow-primary)] overflow-y-auto max-h-[640px]">
           <p className="mb-2 font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">
             Datos del incidente{formData && <span className="ml-2 text-[var(--sf-color-primary)]">· {formData.id}</span>}
           </p>
-
           {formData ? (
             <div className="space-y-3">
-
               <SectionHead>Localización</SectionHead>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Geo hash">{txt("geo_hash")}</Field>
@@ -379,7 +296,6 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
                 <Field label="Período del día">{txt("day_period")}</Field>
                 <Field label="Condiciones especiales">{txt("special_conditions_at_site")}</Field>
               </div>
-
               <SectionHead>Vehículo</SectionHead>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Tipo de vehículo">{txt("vehicle_type")}</Field>
@@ -388,7 +304,6 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
                 <Field label="Abandona calzada">{txt("vehicle_leaving_carriageway")}</Field>
                 <Field label="Conducción izquierda">{txt("vehicle_left_hand_drive")}</Field>
               </div>
-
               <SectionHead>Impacto y circunstancias</SectionHead>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Primer punto de impacto">{txt("first_point_of_impact")}</Field>
@@ -396,7 +311,6 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
                 <Field label="Objeto en calzada">{txt("hit_object_in_carriageway")}</Field>
                 <Field label="Objeto fuera de calzada">{txt("hit_object_off_carriageway")}</Field>
               </div>
-
               <SectionHead>Víctimas</SectionHead>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Nº de víctimas">{num("number_of_casualties")}</Field>
@@ -404,13 +318,11 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
                 <Field label="Edad de la víctima">{txt("age_band_of_casualty")}</Field>
                 <Field label="Edad del conductor">{txt("age_band_of_driver")}</Field>
               </div>
-
               <SectionHead>Peatón</SectionHead>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Localización peatón">{txt("pedestrian_location")}</Field>
                 <Field label="Movimiento peatón">{txt("pedestrian_movement")}</Field>
               </div>
-
             </div>
           ) : (
             <p className="py-8 text-center font-sf-mono text-sm text-sf-dim">Sin datos — reciba una alerta para autocompletar</p>
@@ -447,21 +359,13 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
 
           {prediction && severityCfg && (
             <div className={`rounded-sm border p-5 transition ${severityCfg.classes}`}>
-
-              {/* Header */}
               <div className="mb-4 flex flex-wrap items-center gap-3">
-                <span className={`rounded-sm px-2.5 py-1 font-sf-mono text-xs uppercase tracking-[0.2em] ${severityCfg.badge}`}>
-                  {severityCfg.label}
-                </span>
-                <span className={`font-sf-display text-2xl font-semibold tracking-wide ${severityCfg.text}`}>
-                  Grado {prediction.prediction}
-                </span>
+                <span className={`rounded-sm px-2.5 py-1 font-sf-mono text-xs uppercase tracking-[0.2em] ${severityCfg.badge}`}>{severityCfg.label}</span>
+                <span className={`font-sf-display text-2xl font-semibold tracking-wide ${severityCfg.text}`}>Grado {prediction.prediction}</span>
                 <span className="ml-auto font-sf-mono text-sm text-sf-muted">
                   Probabilidad: <span className={severityCfg.text}>{(prediction.severity_probability * 100).toFixed(1)}%</span>
                 </span>
               </div>
-
-              {/* Recommendations */}
               <p className="mb-2 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Recomendaciones</p>
               <ul className="mb-5 space-y-1.5">
                 {severityCfg.recommendations.map((r, i) => (
@@ -470,44 +374,33 @@ export default function AlertCenter({ apiBase }: { apiBase: string }) {
                   </li>
                 ))}
               </ul>
-
-              {/* Contact buttons */}
               <p className="mb-3 font-sf-mono text-xs uppercase tracking-[0.18em] text-sf-muted">Contactar asistencias</p>
               <div className="flex flex-wrap gap-3">
                 {severityCfg.contacts.map((key) => {
                   const cfg = CONTACT_CONFIG[key]!;
                   const contacted = contactedSet.has(key);
                   return (
-                    <button
-                      key={key}
-                      type="button"
+                    <button key={key} type="button"
                       onClick={() => setContactedSet((prev) => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; })}
                       data-sf-sound-click
                       className={`inline-flex items-center gap-2 rounded-sm border px-4 py-2 font-sf-mono text-xs uppercase tracking-[0.18em] transition duration-200 active:scale-[0.97] ${contacted ? `${cfg.color} opacity-60` : `${cfg.color} hover:brightness-125`}`}
                     >
-                      <span>{cfg.symbol}</span>
-                      {cfg.label}
+                      <span>{cfg.symbol}</span>{cfg.label}
                       {contacted && <span className="ml-1 text-[0.6rem] opacity-80">· Contactado</span>}
                     </button>
                   );
                 })}
               </div>
-
             </div>
           )}
         </div>
 
-        {/* Right: traffic photo below the map */}
+        {/* Right: traffic photo */}
         <div className="rounded-sm border border-[var(--sf-border-subtle)] bg-[color-mix(in_oklab,var(--sf-bg-elevated)_85%,transparent)] p-3 flex flex-col gap-2 overflow-hidden">
           <p className="font-sf-mono text-xs uppercase tracking-[0.2em] text-sf-muted">Imagen del incidente</p>
           <div className="overflow-hidden rounded-sm border border-[var(--sf-border-subtle)] min-h-[200px] max-h-[360px] flex items-center justify-center">
             {traficImage ? (
-              <img
-                key={traficImage}
-                src={traficImage}
-                alt="Imagen de tráfico"
-                className="w-full h-auto object-contain block"
-              />
+              <img key={traficImage} src={traficImage} alt="Imagen de tráfico" className="w-full h-auto object-contain block" />
             ) : (
               <p className="font-sf-mono text-sm text-sf-dim">Sin imagen — reciba una alerta</p>
             )}
