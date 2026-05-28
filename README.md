@@ -1,67 +1,58 @@
-# Sci‑Fi UI (Astro)
+# Setosa Frontend — Severity Prediction Dashboard
 
-**Sci‑Fi UI** is an **Astro-first** interface kit for cockpit-style layouts: composable **frames and panels**, **HUD** primitives (corners, reticle, status bars, tickers), a **terminal** stack, and a passive **radar** — all biased toward **static HTML and CSS**, with **Tailwind v4** and shared **design tokens** (themes, glow, scanlines, optional sound). A thin **shell** (`AppShell`, `AppNav`) ties pages together with vignette, grain, and global **settings** persisted in the browser. **React** shows up only where it pays off: **charts** (uPlot), a **MapLibre** tactical map, **Framer Motion** for a few borders, and an optional **TensorFlow.js** panel on the intel route — each gated by env flags so you can ship a lighter fork without ripping out the whole demo.
+**Setosa** is a real‑time traffic‑incident severity dashboard built on the [Sci‑Fi UI](https://github.com/nerdyman/astro-scifi) template for Astro. It consumes a remote API to register incidents and predict their severity, rendering results inside a cockpit‑style HUD shell.
 
-**License:** [MIT](LICENSE) · **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) · **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+**License:** [MIT](LICENSE)
 
-## Docs
+## Workflow
 
-- [docs/architecture.md](docs/architecture.md) — layout and layers  
-- [docs/components.md](docs/components.md) — component props  
-- [docs/tokens-and-settings.md](docs/tokens-and-settings.md) — CSS variables and `sf:settings`  
-- [docs/third-party.md](docs/third-party.md) — tiles, embeds, fonts — legal / privacy notes  
+1. Click **"Nuevo suceso"** → the app requests `GET /get_data` from the backend.
+2. The form and history table are populated with the returned data.
+3. Fill in the form fields and click **"Obtener severidad"** → the app sends a `POST /get_prediction`.
+4. The severity panel updates with the prediction, probability, and recommended contacts (ambulance, police, fire, tow truck).
 
-## Optional env flags
+## API
 
-See [`.env.example`](.env.example). Set **`PUBLIC_FEATURE_INTEL_ML=false`** to drop COCO-SSD on `/intel`, or **`PUBLIC_FEATURE_MAP=false`** for a map placeholder without MapLibre.
+All backend communication is centralized in [`src/services/api.ts`](src/services/api.ts). Two SSR endpoints proxy requests to the upstream API:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/data` | GET | Fetches incident data (form schema + history) |
+| `/api/predict` | POST | Sends form data and returns severity prediction |
+
+The upstream URL is defined via `PUBLIC_API_URL` in the environment (see [`.env.example`](.env.example)).
 
 ## Stack
 
-Astro 6, Tailwind v4 (`@tailwindcss/vite`), React where needed (uPlot, MapLibre, Framer Motion, TensorFlow.js on `/intel`).
+Astro 6, Tailwind v4 (`@tailwindcss/vite`), React islands for interactivity (AlertCenter, charts, map), MapLibre GL, uPlot.
 
 ## Routes
 
 | Path | What it is |
 |------|------------|
-| `/` | Landing page |
+| `/` | Main dashboard — AlertCenter island with form, table, map, and severity panel |
 | `/components` | Component documentation (nav + preview + snippets per primitive) |
 | `/kit` | Component showcase (panels, HUD, radar, terminal) |
 | `/settings` | Global shell preferences (theme, overlays, motion, sound) |
 | `/dashboard` | uPlot charts + Open-Meteo sample |
-| `/map` | MapLibre tactical map (env can disable) |
-| `/intel` | YouTube embed + optional local COCO-SSD (env can disable ML block) |
+| `/map` | MapLibre tactical map |
+| `/intel` | YouTube embed + optional COCO-SSD object detection |
 
-## Layout (src)
+## Key components
 
-`components/` — `core`, `effects`, `hud`, `terminal`, `radar`, `shell` (AppShell, AppNav), `charts`, `map`, `intel` · `layouts/` (ScifiLayout) · `lib/` · `styles/` · `plugins/` · `pages/` · `scripts/` · `data/`
+- **`AlertCenter`** (`src/components/alertas/AlertCenter.tsx`) — drives the main workflow: fetches data, manages form state, sends predictions, renders severity results and contact buttons.
+- **`AppShell`** / **`AppNav`** (`src/components/shell/`) — layout shell with vignette, scanlines, grain, and navigation.
+- **Sci‑Fi primitives** — `Panel`, `Frame`, `Button`, HUD elements, terminal, radar, effects (glow, scanlines, animated borders).
 
-Pages use [`AppShell`](src/components/shell/AppShell.astro) (background, vignette, scanlines) and [`AppNav`](src/components/shell/AppNav.astro). Pass `narrow` to `AppShell` for a centered max-width column.
+## Env flags
 
-## Usage
+See [`.env.example`](.env.example). Key variables:
 
-```astro
----
-import ScifiLayout from "../layouts/ScifiLayout.astro";
-import AppShell from "../components/shell/AppShell.astro";
-import AppNav from "../components/shell/AppNav.astro";
-import Panel from "../components/core/Panel.astro";
----
-
-<ScifiLayout title="My HUD">
-  <AppShell>
-    <AppNav />
-    <Panel variant="primary" glow>…</Panel>
-  </AppShell>
-</ScifiLayout>
-```
-
-**Sound:** wired from [`boot.ts`](src/scripts/boot.ts) via `AppShell`. Use `data-sf-sound-hover` / `data-sf-sound-click`, or `sound` on [`Button.astro`](src/components/core/Button.astro). Settings live under `sf:settings` in `localStorage` — see [`src/lib/settings.ts`](src/lib/settings.ts).
-
-**Themes:** Default (no attribute) is **synthwave** cyan / magenta on violet-black. Optional `data-theme`: `nebula` (older cyan/violet look), `ember`, `matrix`, `void` — see [`tokens.css`](src/styles/tokens.css). **Appearance:** `data-sf-appearance` — `high-contrast`, `light`.
-
-**Map tiles:** demo uses public raster endpoints; ship your own tiles or a paid plan and follow each provider’s terms (e.g. [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/)).
-
-**Intel:** webcam / file runs in-browser; YouTube iframes are not script-readable for CV.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PUBLIC_API_URL` | — | Base URL for the severity‑prediction API |
+| `PUBLIC_FEATURE_INTEL_ML` | `true` | Toggle TensorFlow.js block on `/intel` |
+| `PUBLIC_FEATURE_MAP` | `true` | Toggle MapLibre tactical map |
 
 ## Commands
 
@@ -73,4 +64,3 @@ import Panel from "../components/core/Panel.astro";
 | `npm run preview` | Preview build |
 
 **Node ≥ 22.12** (Astro 6).
-# setosa-frontend
